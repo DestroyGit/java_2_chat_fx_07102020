@@ -35,10 +35,10 @@ public class ClientHandler {
                             }
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
-                            if (newNick != null){
+                            if (newNick != null) {
                                 nickname = newNick;
                                 server.subscribe(this);
-                                sendMsg("/authok "+ newNick);
+                                sendMsg("/authok " + newNick);
                                 break;
                             } else {
                                 sendMsg("Неверный логин / пароль");
@@ -55,8 +55,17 @@ public class ClientHandler {
                             sendMsg("/end");
                             break;
                         }
-                        
-                        server.broadcastMsg(this, str);
+                        if (str.startsWith("/w ")) {
+                            String[] token = str.split("\\s");
+                            String recipient = token[1];
+                            String s = "";
+                            for (int i = 2; i < token.length; i++) {
+                                s = s.concat(token[i]) + " ";
+                            }
+                            server.privateMsg(this, recipient, s);
+                        } else {
+                            server.broadcastMsg(this, str);
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
