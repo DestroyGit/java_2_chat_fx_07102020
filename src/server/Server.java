@@ -53,15 +53,19 @@ public class Server {
         }
     }
 
-    public void privateMsg(ClientHandler sender, String recipient, String msg) {
-        String messageForRecipient = String.format("[ %s ] (Private): %s", sender.getNickname(), msg);
-        String messageForSender = String.format("[ %s ] (Private for {%s}): %s", sender.getNickname(), recipient, msg);
+    // МЕТОД ПРИВАТНОГО СООБЩЕНИЯ
+    public void privateMsg(ClientHandler sender, String reciever, String msg) {
+        String message = String.format("[ %s ] private [ %s ]: %s", sender.getNickname(), reciever, msg);
         for (ClientHandler c : clients) {
-            if(c.getNickname().equals(recipient)){
-                c.sendMsg(messageForRecipient);
-                sender.sendMsg(messageForSender);
+            if (c.getNickname().equals(reciever)){
+                c.sendMsg(message); // отправляем сообщение получателю, если в списке он есть
+                if (!sender.getNickname().equals(reciever)){ // если получатель - не сам отправитель, то и себе отправляем сообщение
+                    sender.sendMsg(message);
+                }
+                return;
             }
         }
+        sender.sendMsg(String.format("Server: client %s is not found", reciever)); // если такой отправитель не найден, отправляем сообщение отправителю
     }
 
     public void subscribe(ClientHandler clientHandler) {
@@ -75,4 +79,5 @@ public class Server {
     public AuthService getAuthService() {
         return authService;
     }
+
 }

@@ -50,19 +50,18 @@ public class ClientHandler {
 
                     while (true) {
                         String str = in.readUTF();
-
-                        if (str.equals("/end")) {
-                            sendMsg("/end");
-                            break;
-                        }
-                        if (str.startsWith("/w ")) {
-                            String[] token = str.split("\\s");
-                            String recipient = token[1];
-                            String s = "";
-                            for (int i = 2; i < token.length; i++) {
-                                s = s.concat(token[i]) + " ";
+                        if (str.startsWith("/")) {
+                            if (str.equals("/end")) {
+                                sendMsg("/end");
+                                break;
                             }
-                            server.privateMsg(this, recipient, s);
+                            if (str.startsWith("/w")) {
+                                String[] token = str.split("\\s", 3); // разделяет на 3 элемента: /w, получатель и текст сообщения
+                                if (token.length < 3){
+                                    continue;
+                                }
+                                server.privateMsg(this, token[1],token[2]);
+                            }
                         } else {
                             server.broadcastMsg(this, str);
                         }
