@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     DataInputStream in;
@@ -28,6 +29,19 @@ public class ClientHandler {
                     while (true) {
                         String str = in.readUTF();
 
+                        if (str.startsWith("/reg ")){
+                            String[] token = str.split("\\s");
+                            if (token.length < 4) {
+                                continue;
+                            }
+                            boolean b = server.getAuthService().registration(token[1], token[2],token[3]);
+                            if (b){
+                                sendMsg("/regok");
+                            } else {
+                                sendMsg("/regno");
+                            }
+                        }
+
                         if (str.startsWith("/auth ")) {
                             String[] token = str.split("\\s");
                             if (token.length < 3) {
@@ -36,12 +50,20 @@ public class ClientHandler {
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
                             if (newNick != null) {
-                                nickname = newNick;
-                                server.subscribe(this);
-                                sendMsg("/authok " + newNick);
-                                break;
+                                login = token[1]; // присваиваем для login введенный пользователем логин
+                                if(!server.isLoginAuthenticated(login)){ // если такого пользователя еще нет в чате, то даем авторизоваться
+                                    nickname = newNick;
+
+                                    sendMsg("/authok " + newNick);
+                                    server.subscribe(this);
+
+                                    break;
+                                } else{
+                                    sendMsg("Под текущим логином уже вошли в чат\n");
+                                }
+
                             } else {
-                                sendMsg("Неверный логин / пароль");
+                                sendMsg("Неверный логин / пароль\n");
                             }
                         }
                     }
@@ -96,5 +118,9 @@ public class ClientHandler {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getLogin() {
+        return login;
     }
 }

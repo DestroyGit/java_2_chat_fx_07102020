@@ -70,14 +70,37 @@ public class Server {
 
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
+        broadcastClientList();
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
+        broadcastClientList();
     }
 
     public AuthService getAuthService() {
         return authService;
     }
 
+    public boolean isLoginAuthenticated(String login){
+        for (ClientHandler c : clients) {
+            if (c.getLogin().equals(login)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ОТПРАВКА СПИСКА АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ В ПРАВОЕ ОКНО В СТОЛБИК ПОСЛЕ ВХОДА И ВЫХОДА ИЗ ЧАТА ЛЮБОГО ПОЛЬЗОВАТЕЛЯ
+    public void broadcastClientList() {
+        StringBuilder sb = new StringBuilder("/clientlist "); // создаем изменяемую строку, которая будет начинаться с /clientlist_
+        for (ClientHandler c : clients) {
+            sb.append(c.getNickname()).append(" "); // добавляем в sb никнеймы авторизованных пользователей: /clienlist qwe asd zxc
+        }
+        sb.setLength(sb.length() - 1); // убираем лишний пробел в конце
+        String message = sb.toString(); // переводим в формат String для отправки всем пользователям списка
+        for (ClientHandler c : clients) {
+            c.sendMsg(message); // отправляем сообщение
+        }
+    }
 }
