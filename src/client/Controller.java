@@ -19,6 +19,7 @@ import javafx.stage.Stage;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
@@ -123,25 +124,26 @@ public class Controller implements Initializable {
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
-                        if (str.startsWith("/")){
+                        if (str.startsWith("/")) {
                             if (str.equals("/end")) {
                                 break;
                             }
-                            if (str.startsWith("/clientlist")){ // обновляем лист с авторизованными пользователями
-                                String [] token = str.split("\\s");
-                                Platform.runLater(()->{ // так как графическую часть затрагиваем, используем это
+                            if (str.startsWith("/clientlist")) { // обновляем лист с авторизованными пользователями
+                                String[] token = str.split("\\s");
+                                Platform.runLater(() -> { // так как графическую часть затрагиваем, используем это
                                     clientList.getItems().clear(); // очищаем поле с никами, кто авторизовался
                                     for (int i = 1; i < token.length; i++) { // /clientlist qwe asd zxc - это 0 1 2 3 элементы, нам надо с 1 элемента
                                         clientList.getItems().add(token[i]); // добавляем в поле с никами авторизованные ники
 
                                     }
                                 });
-                                
                             }
                         } else {
                             textArea.appendText(str + "\n");
                         }
                     }
+                }catch (EOFException e){
+                    System.out.println("Отключен по таймауту");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {

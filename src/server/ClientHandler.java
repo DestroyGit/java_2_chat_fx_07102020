@@ -2,8 +2,10 @@ package server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 public class ClientHandler {
@@ -25,6 +27,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(5000);
                     //цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
@@ -69,6 +72,7 @@ public class ClientHandler {
                     }
                     //цикл работы
 
+                    socket.setSoTimeout(0);
 
                     while (true) {
                         String str = in.readUTF();
@@ -88,7 +92,12 @@ public class ClientHandler {
                             server.broadcastMsg(this, str);
                         }
                     }
-                } catch (IOException e) {
+                }
+                catch (SocketTimeoutException e){
+                    sendMsg("/end");
+                    System.out.println("Отключен по таймауту");
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     server.unsubscribe(this);
