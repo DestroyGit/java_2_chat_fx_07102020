@@ -37,4 +37,17 @@ public class SimpleAuthService implements AuthService {
         }
         return null;
     }
+
+
+    // РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ, КОГДА ОН ВВОДИЛ ЛОГИН, ПАРОЛЬ И НИКНЕЙМ И НАЖАЛЬ КНОПКУ РЕГИСТРАЦИИ
+    @Override
+    public boolean registration(String login, String password, String nickname) {
+        for (UserData user : users) { // проходим по всему массиву зарегистрированных пользователей
+            if(user.login.equals(login) || user.nickname.equals(nickname)){ // если находит никнейм или логин, то не даст зарегаться
+                return false;
+            }
+        }
+        users.add(new UserData(login, password, nickname)); // если таких логина и никнейма нет еще в базе, то даем регистрировать, добавляем данные
+        return true;
+    }
 }

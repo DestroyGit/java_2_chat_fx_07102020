@@ -2,8 +2,11 @@ package server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     DataInputStream in;
@@ -24,9 +27,23 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(5000);
                     //цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
+
+                        if (str.startsWith("/reg ")){
+                            String[] token = str.split("\\s");
+                            if (token.length < 4) {
+                                continue;
+                            }
+                            boolean b = server.getAuthService().registration(token[1], token[2],token[3]);
+                            if (b){
+                                sendMsg("/regok");
+                            } else {
+                                sendMsg("/regno");
+                            }
+                        }
 
                         if (str.startsWith("/auth ")) {
                             String[] token = str.split("\\s");
@@ -35,30 +52,52 @@ public class ClientHandler {
                             }
                             String newNick = server.getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
-                            if (newNick != null){
-                                nickname = newNick;
-                                server.subscribe(this);
-                                sendMsg("/authok "+ newNick);
-                                break;
+                            if (newNick != null) {
+                                login = token[1]; // присваиваем для login введенный пользователем логин
+                                if(!server.isLoginAuthenticated(login)){ // если такого пользователя еще нет в чате, то даем авторизоваться
+                                    nickname = newNick;
+
+                                    sendMsg("/authok " + newNick);
+                                    server.subscribe(this);
+
+                                    break;
+                                } else{
+                                    sendMsg("Под текущим логином уже вошли в чат\n");
+                                }
+
                             } else {
-                                sendMsg("Неверный логин / пароль");
+                                sendMsg("Неверный логин / пароль\n");
                             }
                         }
                     }
                     //цикл работы
 
+                    socket.setSoTimeout(0);
 
                     while (true) {
                         String str = in.readUTF();
-
-                        if (str.equals("/end")) {
-                            sendMsg("/end");
-                            break;
+                        if (str.startsWith("/")) {
+                            if (str.equals("/end")) {
+                                sendMsg("/end");
+                                break;
+                            }
+                            if (str.startsWith("/w")) {
+                                String[] token = str.split("\\s", 3); // разделяет на 3 элемента: /w, получатель и текст сообщения
+                                if (token.length < 3){
+                                    continue;
+                                }
+                                server.privateMsg(this, token[1],token[2]);
+                            }
+                        } else {
+                            server.broadcastMsg(this, str);
                         }
-                        
-                        server.broadcastMsg(this, str);
                     }
-                } catch (IOException e) {
+                }
+                catch (SocketTimeoutException e){
+                    sendMsg("/end");
+                    System.out.println("Отключен по таймауту");
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     server.unsubscribe(this);
@@ -88,5 +127,9 @@ public class ClientHandler {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getLogin() {
+        return login;
     }
 }
